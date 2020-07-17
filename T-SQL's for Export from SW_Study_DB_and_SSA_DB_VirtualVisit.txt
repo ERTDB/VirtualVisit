@@ -1,0 +1,111 @@
+on study DB  run
+
+1st Tab:
+1st Col
+StudyName
+select db_name()
+
+For Ex:JANSSEN_CNTO1275COV2001_UST
+
+1st Tab:
+2nd Col:
+
+Source ID:
+
+Go to SSA DB (PHT_CENTRAL_ADMIN)
+
+USE PHT_CENTRAL_ADMIN 
+select studyid from ca_studies WITH (nolock) where name='JANSSEN_CNTO1275COV2001_UST'
+
+SourceID(Study_id)
+For Ex : 1150
+3rd Col:
+select siteformat from ca_studies WITH (nolock) where name='JANSSEN_CNTO1275COV2001_UST'
+
+4th Column:
+select top 2 patientid from lookup_pt  with(nolock)
+For Ex:1001006111
+Put regex for 10 digits- For Ex:
+^\\d{10}$
+
+2nd Tab:
+
+1st Col:
+select studyid as SourceStudyId from ca_studies where name='JANSSEN_CNTO1275COV2001_UST'
+Fill it down for all Columns.
+
+
+select name as SourceSiteName from lookup_Domain where issite=1 order by name 
+For Ex:^\\d{7}$
+
+2nd Col and 3rd Col:
+Get krdoms from study db AND plug them into the SSA DB.
+
+select krdom from lookup_domain  WITH (nolock) where site=1 
+
+USE PHT_CENTRAL_ADMIN
+select  site_id as SourceSiteId,
+name  as SourceSiteName
+ from ca_site where 
+ krdom in
+(
+'DOM.3916619.31',
+'DOM.3916640.35',
+'DOM.3916642.39',
+'DOM.3916644.43',
+'DOM.3916650.54',
+'DOM.3916705.65',
+'DOM.3916710.69',
+'DOM.3916720.73',
+'DOM.3916722.77',
+'DOM.3916724.81',
+'DOM.3916726.85',
+'DOM.3916728.89',
+'DOM.3916731.93',
+'DOM.3916733.97'
+)
+
+
+Users:
+--v2 to concatenate and generate UserName per Christian's request
+select  distinct ca_logins.login_id as SourceUserId,
+--firstname as UserFirstName,
+--lastname as UserLastName,
+firstname+' '+lastname as 'UserName',
+email as email
+
+ From ca_Janssen_CNTO1275COV2001_UST_login_history  WITH (nolock)
+JOIN CA_logins  WITH (nolock)
+on ca_Janssen_CNTO1275COV2001_UST_login_history.login_id=ca_logins.login_id
+order by UserName
+
+--v1 dont use
+--select  distinct ca_logins.login_id as SourceUserId,
+--firstname as UserFirstName,
+--lastname as UserLastName,
+--email as email
+
+ --From ca_Janssen_CNTO1275COV2001_UST_login_history  WITH (nolock)
+--JOIN CA_logins  WITH (nolock)
+--on ca_Janssen_CNTO1275COV2001_UST_login_history.login_id=ca_logins.login_id
+--order by firstname
+
+
+Site Users:(4Th Tab)
+Make sure you pick the correct Study Login History Table
+select distinct site_id as SourceSiteId,
+dbo.ca_JANSSEN_CNTO1275COV2001_UST_Login_history.login_id as SourceUserId
+
+ from ca_login_site 
+join dbo.ca_JANSSEN_CNTO1275COV2001_UST_Login_history
+
+on ca_login_site.login_id=dbo.ca_JANSSEN_CNTO1275COV2001_UST_Login_history.login_id 
+where  site_id >='18188' and site_id<='18201'
+
+Subjects:
+Run this on the Study Db 
+
+select lookup_domain .name  as SourceSiteId,
+lookup_pt.patientid as SourceSubjectId,
+ lookup_pt.kruser as ClientFacingSubjectname  from lookup_pt join lookup_domain on lookup_pt.krdom=lookup_domain.krdom 
+Patient Email id / SMS is not captured for now on SW side 
